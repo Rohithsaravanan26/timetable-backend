@@ -321,10 +321,19 @@ def parse_sections(raw_text: str) -> List[Section]:
     current_block: List[str] = []
 
     GENERIC_HEADINGS = [
-        "course overview", "open elective", "professional elective",
-        "professional core", "basic sciences", "full registration",
-        "phase-i", "phase ii"
-    ]
+    "course overview",
+    "open elective",
+    "professional elective",
+    "professional core",
+    "basic sciences",
+    "engineering sciences",
+    "humanities and sciences",
+    "employability enhancement courses",
+    "full registration",
+    "phase-i",
+    "phase ii"
+]
+
 
     DEPARTMENT_KEYWORDS = [
         "aids", "aiml", "cse", "ece", "eee", "mech", "civil", "ai",
@@ -944,4 +953,5 @@ def get_faculty_reviews(faculty_name: str, db: Session = Depends(get_db)):
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
     return FileResponse("index.html")
+
 
