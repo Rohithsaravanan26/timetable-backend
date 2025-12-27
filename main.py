@@ -190,7 +190,8 @@ async def get_current_user(
     if user is None:
         raise credentials_exception
     return user
-
+def normalize_faculty_name(name: str) -> str:
+    return name.strip().upper()
 # ======================
 # TIMETABLE CONSTANTS
 # ======================
@@ -554,6 +555,7 @@ def timing_penalty(occ: Dict[tuple, Section], prefs: Preferences) -> float:
 
 
 def get_faculty_rating_db(db: Session, faculty_name: str) -> float:
+    faculty_name = normalize_faculty_name(faculty_name)
     faculty = db.query(Faculty).filter(Faculty.name == faculty_name).first()
     if not faculty:
         return 3.5
@@ -878,7 +880,7 @@ def submit_review(
 ):
     if review.rating < 1 or review.rating > 5:
         raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
-
+    faculty_name = normalize_faculty_name(review.faculty_name)
     faculty = db.query(Faculty).filter(Faculty.name == review.faculty_name).first()
     if not faculty:
         faculty = Faculty(name=review.faculty_name)
@@ -920,6 +922,7 @@ def submit_review(
 
 @app.get("/faculty/{faculty_name}/reviews", response_model=FacultySummaryOut)
 def get_faculty_reviews(faculty_name: str, db: Session = Depends(get_db)):
+    faculty_name = normalize_faculty_name(faculty_name)
     faculty = db.query(Faculty).filter(Faculty.name == faculty_name).first()
     if not faculty:
         return FacultySummaryOut(
@@ -941,3 +944,4 @@ def get_faculty_reviews(faculty_name: str, db: Session = Depends(get_db)):
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
     return FileResponse("index.html")
+
