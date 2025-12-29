@@ -728,7 +728,8 @@ def build_faculty_summary(faculty_name: str, reviews: List[Review]) -> FacultySu
 @app.post("/auth/google", response_model=Token)
 def google_login(body: GoogleAuthIn, db: Session = Depends(get_db)):
     token = body.id_token
-    device_id = body.device_id or ""  # front-end will send a stable ID
+    device_id = body.device_id or ""
+
     try:
         idinfo = id_token.verify_oauth2_token(
             token,
@@ -738,8 +739,22 @@ def google_login(body: GoogleAuthIn, db: Session = Depends(get_db)):
         email = idinfo["email"]
         sub = idinfo["sub"]
     except Exception:
-        raise HTTPException(status_code=401, detail="Only One Google Account For a Device")
+        raise HTTPException(status_code=401, detail="Invalid Google token. One device should have one account")
 
+    # ✅ Enforce: ONE DEVICE → ONE GOOGLE ACCOUNT
+    if device_id:
+        existing_user = (
+            db.query(User)
+            .filter(User.current_device_id == device_id)
+            .first()
+        )
+        if existing_user and existing_user.google_sub != sub:
+            raise HTTPException(
+                status_code=403,
+                detail="This device is already linked to another Google account."
+            )
+
+    # Find or create user
     user = get_user_by_google_sub(db, sub)
     if not user:
         user = get_user_by_email(db, email)
@@ -751,27 +766,22 @@ def google_login(body: GoogleAuthIn, db: Session = Depends(get_db)):
                 google_sub=sub,
                 credits=0,
                 has_used_trial=False,
-                current_device_id=device_id or None,
             )
             db.add(user)
+
         db.commit()
         db.refresh(user)
-    else:
-        # Enforce single device
-        if user.current_device_id and user.current_device_id != device_id:
-            raise HTTPException(
-                status_code=403,
-                detail="This account is already linked to another device. Trial can be used only on that device."
-            )
-        # First time: store device
-        if not user.current_device_id and device_id:
-            user.current_device_id = device_id
-            db.add(user)
-            db.commit()
-            db.refresh(user)
+
+    # ✅ Bind device to user (only once)
+    if device_id and not user.current_device_id:
+        user.current_device_id = device_id
+        db.add(user)
+        db.commit()
+        db.refresh(user)
 
     access_token = create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
+
 
 
 
@@ -953,5 +963,6 @@ def get_faculty_reviews(faculty_name: str, db: Session = Depends(get_db)):
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
     return FileResponse("index.html")
+
 
 
