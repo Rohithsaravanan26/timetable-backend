@@ -35,8 +35,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 1 day
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "938605090290-spglalmtou8cnn22j6j7he1q82foeho8.apps.googleusercontent.com")
 
 # 💳 Razorpay keys (replace with your keys)
-RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "rzp_test_RoDquDjwxWmSjV")
-RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "NdTxn1AR30Q36ahtKvV3kZJ2")
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "rzp_live_RyAIo1CW9uPG0R")
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "3qRCB5rpyy6J3WvmNFpWvk0N")
 
 # Each payment grants 1 credit costing ₹50
 CREDIT_PRICE_PAISE = 5000  # 50 INR in paise
@@ -963,6 +963,7 @@ def get_faculty_reviews(faculty_name: str, db: Session = Depends(get_db)):
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
     return FileResponse("index.html")
+
 
 
 
