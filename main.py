@@ -890,6 +890,50 @@ def generate(
 # ======================
 # FACULTY REVIEWS API
 # ======================
+@app.get("/faculty/search")
+def search_faculty(q: str, db: Session = Depends(get_db)):
+    if not q or len(q.strip()) < 2:
+        return []
+
+    q = q.strip().upper()
+
+    faculties = (
+        db.query(Faculty)
+        .filter(Faculty.name.contains(q))
+        .order_by(Faculty.name)
+        .limit(10)
+        .all()
+    )
+
+    return [
+        {
+            "id": f.id,
+            "name": f.name
+        }
+        for f in faculties
+    ]
+@app.get("/faculty/{faculty_id}/courses")
+def get_faculty_courses(faculty_id: int, db: Session = Depends(get_db)):
+    courses = (
+        db.query(
+            Review.course_code,
+            Review.course_title
+        )
+        .filter(
+            Review.faculty_id == faculty_id,
+            Review.course_code.isnot(None)
+        )
+        .distinct()
+        .all()
+    )
+
+    return [
+        {
+            "course_code": c.course_code,
+            "course_title": c.course_title
+        }
+        for c in courses
+    ]
 
 @app.post("/review")
 def submit_review(
@@ -963,6 +1007,7 @@ def get_faculty_reviews(faculty_name: str, db: Session = Depends(get_db)):
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
     return FileResponse("index.html")
+
 
 
 
