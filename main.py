@@ -43,10 +43,13 @@ CREDIT_PRICE_PAISE = 5000  # 50 INR in paise
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL is not set")
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True
 )
+
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -116,8 +119,10 @@ class Review(Base):
     )
 
 
+@app.on_event("startup")
+def startup():
+    Base.metadata.create_all(bind=engine)
 
-Base.metadata.create_all(bind=engine)
 
 # ======================
 # AUTH MODELS & HELPERS
@@ -1015,6 +1020,7 @@ def get_faculty_reviews(faculty_name: str, db: Session = Depends(get_db)):
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
     return FileResponse("index.html")
+
 
 
 
