@@ -1013,6 +1013,19 @@ def get_faculty_reviews(faculty_name: str, db: Session = Depends(get_db)):
 def serve_frontend():
     return FileResponse("index.html")
 
+@app.post("/admin/reset-database")
+def reset_database(db: Session = Depends(get_db)):
+    """
+    ⚠️ DANGER: Deletes ALL DATA
+    Users, reviews, faculties, credits – EVERYTHING
+    """
+    db.execute("DELETE FROM reviews")
+    db.execute("DELETE FROM faculties")
+    db.execute("DELETE FROM users")
+    db.commit()
+
+    return {"status": "database wiped successfully"}
+
 
 
 
