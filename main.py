@@ -1013,18 +1013,24 @@ def get_faculty_reviews(faculty_name: str, db: Session = Depends(get_db)):
 def serve_frontend():
     return FileResponse("index.html")
 
+from sqlalchemy import text
+
 @app.post("/admin/reset-database")
 def reset_database(db: Session = Depends(get_db)):
-    """
-    ⚠️ DANGER: Deletes ALL DATA
-    Users, reviews, faculties, credits – EVERYTHING
-    """
-    db.execute("DELETE FROM reviews")
-    db.execute("DELETE FROM faculties")
-    db.execute("DELETE FROM users")
-    db.commit()
+    try:
+        db.execute(text("DELETE FROM reviews"))
+        db.execute(text("DELETE FROM faculties"))
+        db.execute(text("DELETE FROM users"))
+        db.execute(text("DELETE FROM sqlite_sequence"))
 
-    return {"status": "database wiped successfully"}
+        db.commit()
+        return {"message": "Database wiped successfully"}
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 
