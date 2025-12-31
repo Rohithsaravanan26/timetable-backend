@@ -1021,7 +1021,6 @@ def reset_database(db: Session = Depends(get_db)):
         db.execute(text("DELETE FROM reviews"))
         db.execute(text("DELETE FROM faculties"))
         db.execute(text("DELETE FROM users"))
-        db.execute(text("DELETE FROM sqlite_sequence"))
 
         db.commit()
         return {"message": "Database wiped successfully"}
@@ -1029,6 +1028,7 @@ def reset_database(db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 
