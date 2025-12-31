@@ -1013,21 +1013,6 @@ def get_faculty_reviews(faculty_name: str, db: Session = Depends(get_db)):
 def serve_frontend():
     return FileResponse("index.html")
 
-from sqlalchemy import text
-
-@app.post("/admin/reset-database")
-def reset_database(db: Session = Depends(get_db)):
-    try:
-        db.execute(text("DELETE FROM reviews"))
-        db.execute(text("DELETE FROM faculties"))
-        db.execute(text("DELETE FROM users"))
-
-        db.commit()
-        return {"message": "Database wiped successfully"}
-
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 
