@@ -6,3 +6,4 @@ google-auth
 python-multipart
 razorpay
 email-validator
+psycopg2-binary
