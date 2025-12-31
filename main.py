@@ -943,21 +943,22 @@ def submit_review(
 ):
     if review.rating < 1 or review.rating > 5:
         raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
-    faculty_name = normalize_faculty_name(review.faculty_name)
-    def normalize_faculty_name(name: str) -> str:
-        return name.strip().upper()
+
     faculty_name = normalize_faculty_name(review.faculty_name)
 
     faculty = db.query(Faculty).filter(Faculty.name == faculty_name).first()
     if not faculty:
-        faculty = Faculty(name=review.faculty_name)
+        faculty = Faculty(name=faculty_name)
         db.add(faculty)
         db.commit()
         db.refresh(faculty)
 
     existing = (
         db.query(Review)
-        .filter(Review.user_id == current_user.id, Review.faculty_id == faculty.id)
+        .filter(
+            Review.user_id == current_user.id,
+            Review.faculty_id == faculty.id
+        )
         .first()
     )
 
@@ -1011,6 +1012,7 @@ def get_faculty_reviews(faculty_name: str, db: Session = Depends(get_db)):
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
     return FileResponse("index.html")
+
 
 
 
