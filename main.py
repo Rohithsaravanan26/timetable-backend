@@ -326,31 +326,27 @@ def parse_sections(raw_text: str) -> List[Section]:
 
     current_course: Optional[str] = None
     current_section = None
-    time_slots: Optional[Dict[str, List[str]]] = None
+    time_slots = None
 
     SECTION_RE = re.compile(
-        r"^(UG|PG)\s*-\s*\d+,\s*(T1-[A-Z0-9-]+),\s*.+?\s*-\s*(.+)$"
+        r"^(UG|PG)\s*-\s*\d+,\s*(T1-[A-Z0-9-]+),.*?-\s*(.+)$"
     )
 
     TIME_RE = re.compile(r"(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})")
 
     def flush():
         nonlocal current_section, time_slots
-        if (
-            current_course
-            and current_section
-            and time_slots
-            and any(time_slots[d] for d in DAYS)
-        ):
-            sections.append(
-                Section(
-                    section_code=current_section["code"],
-                    course_name=current_course,
-                    faculty_name=current_section["faculty"],
-                    time_slots=time_slots,
-                    faculty_rating=None,
+        if current_course and current_section:
+            if any(time_slots[d] for d in DAYS):
+                sections.append(
+                    Section(
+                        section_code=current_section["code"],
+                        course_name=current_course,
+                        faculty_name=current_section["faculty"],
+                        time_slots=time_slots,
+                        faculty_rating=None,
+                    )
                 )
-            )
         current_section = None
         time_slots = None
 
@@ -358,19 +354,17 @@ def parse_sections(raw_text: str) -> List[Section]:
     while i < len(lines):
         line = lines[i]
 
-        # --------------------------------------------------
-        # COURSE NAME (line AFTER "Course overview")
-        # --------------------------------------------------
+        # ======================
+        # COURSE NAME
+        # ======================
         if line.lower() == "course overview" and i + 1 < len(lines):
             current_course = lines[i + 1]
             i += 2
             continue
 
-        # --------------------------------------------------
+        # ======================
         # SECTION HEADER
-        # Example:
-        # UG - 25, T1-G9, ENGLISH - Saranya V
-        # --------------------------------------------------
+        # ======================
         m = SECTION_RE.match(line)
         if m:
             flush()
@@ -383,35 +377,37 @@ def parse_sections(raw_text: str) -> List[Section]:
             i += 1
             continue
 
-        # --------------------------------------------------
-        # DAY + TIME (merge 2 one-hour slots → one period)
-        # --------------------------------------------------
+        # ======================
+        # DAY + TIME
+        # ======================
         if current_section:
             for day in DAYS:
                 if line.startswith(day):
-                    periods_found = set()
+                    ranges = TIME_RE.findall(line)
 
-                    for start, end in TIME_RE.findall(line):
+                    # 🔑 TWO 1-hour slots = ONE period
+                    periods_seen = set()
+                    for start, end in ranges:
                         if (start, end) in PERIODS:
-                            periods_found.add(PERIODS[(start, end)])
+                            periods_seen.add(PERIODS[(start, end)])
 
-                    # add each period only ONCE
-                    for p in periods_found:
+                    for p in periods_seen:
                         if p not in time_slots[day]:
                             time_slots[day].append(p)
                     break
 
-        # --------------------------------------------------
-        # COURSE CODE AT BOTTOM → IGNORE (DO NOT RESET COURSE)
-        # Example:
-        # 19EI407 [3 Credits]
-        # --------------------------------------------------
-        # intentionally ignored
+        # ======================
+        # COURSE CODE → END BLOCK
+        # ======================
+        if re.match(r"^\d{2}[A-Z]{2}\d{3}", line):
+            flush()
+            current_course = None
 
         i += 1
 
     flush()
     return sections
+
 
 
 
@@ -918,6 +914,7 @@ def get_faculty_reviews(faculty_name: str, db: Session = Depends(get_db)):
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
     return FileResponse("index.html")
+
 
 
 
