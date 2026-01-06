@@ -382,7 +382,7 @@ def parse_sections(raw_text: str) -> List[Section]:
                     for start, end in TIME_RE.findall(line):
                         if (start, end) in PERIODS:
                             p = PERIODS[(start, end)]
-                            if p not in time_slots[day]:
+                            if p not in time_slots[day]:     # ✅ PREVENT DUPLICATE PERIOD
                                 time_slots[day].append(p)
                     break
 
@@ -898,6 +898,7 @@ def get_faculty_reviews(faculty_name: str, db: Session = Depends(get_db)):
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
     return FileResponse("index.html")
+
 
 
 
