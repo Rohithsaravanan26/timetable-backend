@@ -40,7 +40,7 @@ RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "3qRCB5rpyy6J3WvmNFpWvk0N
 
 # Each payment grants 1 credit costing ₹50
 CREDIT_PRICE_PAISE = 5000  # 50 INR in paise
-
+CREDITS_PER_PAYMENT = 3
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
@@ -726,12 +726,12 @@ def verify_payment(
     if expected_signature != data.razorpay_signature:
         raise HTTPException(status_code=400, detail="Invalid payment signature")
 
-    current_user.credits += 1
+    current_user.credits += CREDITS_PER_PAYMENT
     db.add(current_user)
     db.commit()
     db.refresh(current_user)
 
-    return {"message": "Payment verified, 1 credit added", "credits": current_user.credits}
+    return {"message": "Payment verified, 3 credit added", "credits": current_user.credits}
 
 # ======================
 # TIMETABLE API ENDPOINTS
@@ -931,6 +931,7 @@ def get_faculty_reviews(faculty_name: str, db: Session = Depends(get_db)):
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
     return FileResponse("index.html")
+
 
 
 
