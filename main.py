@@ -782,12 +782,29 @@ def generate(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    charge_credit_if_needed(db, current_user)
-
     sections = parse_sections(req.raw_text)
+
     for s in sections:
         s.faculty_rating = get_faculty_rating_db(db, s.faculty_name)
-    return build_best_timetables(sections, req.chosen_courses, req.preferences, req.top_k)
+
+    results = build_best_timetables(
+        sections,
+        req.chosen_courses,
+        req.preferences,
+        req.top_k
+    )
+
+    # ❌ NO VALID TIMETABLE → NO CREDIT CHARGED
+    if not results:
+        raise HTTPException(
+            status_code=400,
+            detail="No valid timetable found without clashes. Try changing preferences or courses."
+        )
+
+    # ✅ VALID RESULT → NOW CHARGE CREDIT
+    charge_credit_if_needed(db, current_user)
+
+    return results
 
 # ======================
 # FACULTY REVIEWS API
@@ -914,6 +931,7 @@ def get_faculty_reviews(faculty_name: str, db: Session = Depends(get_db)):
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
     return FileResponse("index.html")
+
 
 
 
