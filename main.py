@@ -40,7 +40,7 @@ RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "3qRCB5rpyy6J3WvmNFpWvk0N
 
 # Each payment grants 1 credit costing ₹50
 CREDIT_PRICE_PAISE = 5000  # 50 INR in paise
-CREDITS_PER_PAYMENT = 3
+CREDITS_PER_PAYMENT = 2
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
@@ -931,6 +931,7 @@ def get_faculty_reviews(faculty_name: str, db: Session = Depends(get_db)):
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
     return FileResponse("index.html")
+
 
 
 
